@@ -7,7 +7,6 @@
   "repository": "git@github.com:filp/next-better-api",
   "author": "Filipe Dobreira",
   "license": "MIT",
-  "private": true,
   "scripts": {
     "lint": "eslint .",
     "test": "jest .",
