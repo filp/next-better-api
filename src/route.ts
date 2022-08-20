@@ -18,6 +18,8 @@ type ErrorResponse = {
   };
 };
 
+type MaybePromise<T> = T | Promise<T>;
+
 // A response body that looks JSON-y, used as the default type:
 type BaseBodyType = Record<string, unknown>;
 
@@ -44,7 +46,7 @@ type HandlerResponse<BodyT> = {
 
 export type ApiRouteHandler<BodyT> = (
   context: RouteContext
-) => Promise<HandlerResponse<BodyT>>;
+) => MaybePromise<HandlerResponse<BodyT>>;
 
 const setResponseHeaders = (
   res: NextApiResponse,
@@ -124,7 +126,7 @@ type EndpointResult<ResponseBodyT> = {
 // Shape of an individual endpoint runtime handler:
 export type EndpointHandler<QueryT, RequestBodyT, ResponseBodyT> = (
   ctx: EndpointContext<QueryT, RequestBodyT>
-) => Promise<EndpointResult<ResponseBodyT>>;
+) => MaybePromise<EndpointResult<ResponseBodyT>>;
 
 // Takes a ZodType | undefined union and spits out either an inferred
 // type for the schema, or undefined. This allows us to more smoothly
