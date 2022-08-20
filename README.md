@@ -128,7 +128,8 @@ import type { getUsers } from '../api/users.ts';
 
 type GetUsersResponseBody = InferEndpointType<typeof getUsers>['Response'];
 
-// Can be combined with API calls, react-query, etc to provide end-to-end type annotation from the endpoint definition:
+// Can be combined with API calls, react-query, etc to provide end-to-end
+// type annotation from the endpoint definition:
 
 const response = await fetch('/api/users' /* ... */);
 
