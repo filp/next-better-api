@@ -20,7 +20,7 @@
     "test": "jest .",
     "build": "rm -rf ./build/ && tsc -b .",
     "dev": "ts-node src/index.ts",
-    "prepack": "yarn lint && yarn build"
+    "prepack": "prettier -c . && yarn lint && yarn test && yarn build"
   },
   "peerDependencies": {
     "next": "^12.*",
