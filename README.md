@@ -1,6 +1,10 @@
-# next-better-api
+# next-better-api ⚡️🔵 [![npm version](https://badge.fury.io/js/next-better-api.svg)](https://badge.fury.io/js/next-better-api)
 
 Opinionated helpers for building NextJS APIs, powered by [Zod](https://github.com/colinhacks/zod).
+
+<center>
+<img src="./logo.svg">
+</center>
 
 ```ts
 import { z } from 'zod';
@@ -142,7 +146,9 @@ import type {
 } from 'next-better-api';
 ```
 
-### Stuff
+---
+
+## Stuff
 
 See license information under [`LICENSE.md`](/LICENSE.md).
 

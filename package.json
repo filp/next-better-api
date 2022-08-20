@@ -7,10 +7,11 @@
   "repository": "git@github.com:filp/next-better-api",
   "author": "Filipe Dobreira",
   "license": "MIT",
+  "types": "build/src/index.d.ts",
   "scripts": {
     "lint": "eslint .",
     "test": "jest .",
-    "build": "tsc -b .",
+    "build": "rm -rf ./build/ && tsc -b .",
     "dev": "ts-node src/index.ts",
     "prepack": "yarn lint && yarn build"
   },
