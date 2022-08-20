@@ -168,12 +168,20 @@ const getUser = endpoint(
       user: await getUserFromRequest(req),
     }),
   },
-  ({ user }) => ({
-    user: {
-      id: user.id,
-      email: user.email,
-    },
-  })
+  ({ user }) => {
+    // `user` is now available as part of the handler context:
+    const { id, email } = user;
+
+    return {
+      status: 200,
+      body: {
+        user: {
+          id: id,
+          email: email,
+        },
+      },
+    };
+  }
 );
 ```
 
