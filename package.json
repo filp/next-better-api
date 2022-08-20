@@ -12,7 +12,7 @@
     "test": "jest .",
     "build": "tsc -b .",
     "dev": "ts-node src/index.ts",
-    "prepack": "yarn lint && yarn test && yarn build"
+    "prepack": "yarn lint && yarn build"
   },
   "peerDependencies": {
     "next": "^12.*",
