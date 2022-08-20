@@ -1,86 +1,149 @@
-# ts-package-boilerplate
+# next-better-api
 
-Minimal, opinionated boilerplate for a javascript library package or project using Typescript.
+Opinionated helpers for building NextJS APIs, powered by [Zod](https://github.com/colinhacks/zod).
+
+```ts
+import { z } from 'zod';
+import { endpoint, asHandler } from 'next-better-api';
+
+const getUsers = endpoint(
+  {
+    method: 'get',
+    responseSchema: z.object({
+      users: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          email: z.string(),
+          active: z.boolean(),
+        })
+      ),
+    }),
+  },
+  async () => {
+    const users = await getAllUsers();
+
+    return {
+      status: 200,
+      body: {
+        users,
+      },
+    };
+  }
+);
+
+export asHandler([getUsers]);
+```
+
+## Installation:
+
+`next-better-api` requires `zod` for schema validation. You can install both libraries with yarn or npm on your existing NextJS project:
+
+```shell
+$ yarn add zod next-better-api
+
+// OR
+
+$ npm i -S zod next-better-api
+```
+
+And import it from your API definitions:
+
+```ts
+import { endpoint, asHandler } from 'next-better-api';
+// import { z } from 'zod'; // If you are defining schemas for your endpoints
+```
+
+Remember you always need to use `asHandler` to convert your `next-better-api` endpoints to NextJS-compatible handlers:
+
+```ts
+export default asHandler([getUsers, createUser, updateUser]);
+```
 
 ## Features:
 
-- Typescript configuration
-- Yarn configuration including essential scripts
-- Opinionated linting setup based on ESLint and Prettier
-- Jest test configuration
-- Ready to publish to npm
+### Method handler support
 
-## Using this boilerplate:
+```ts
+const getUsers = endpoint({
+  method: 'get',
+  // ...
+});
 
-- Clone this repository:
-
-```shell
-$ git clone git@github.com:filp/ts-package-boilerplate.git my-project-name
-$ cd my-project-name
+const deleteUser = endpoint({
+  method: 'delete',
+  // ...
+});
 ```
 
-- Update `package.json` with your project name, author name, etc.
-- Install dependencies, and you're ready to go!
+### Schema validation & automatic type inference support
 
-```shell
-$ yarn
-```
+See [Zod](https://github.com/colinhacks/zod) for all available schema validation options.
 
-## Workflow scripts:
+```ts
+const createUser = endpoint(
+  {
+    method: 'post',
+    bodySchema: z.object({
+      // Name must be at least 3 characters long
+      name: z.string().min(3),
+    }),
 
-### build
+    responseSchema: z.object({
+      userId: z.string(),
+    }),
+  },
 
-Builds files under `src/` into the `build/` directory, using `tsc -b .`
+  async ({ req }) => {
+    // Type for `name` is automatically inferred based on `bodySchema`
+    const { name } = req.body;
 
-```shell
-$ yarn build
-```
+    const newUser = await createUser(req.body);
 
-### dev
+    return {
+      status: 201,
 
-Runs `src/index.ts` directly. Useful for executables, or quickly testing your work.
-
-```shell
-$ yarn dev
-```
-
-### lint
-
-Runs `eslint .` with the included `prettier` configuration against the project.
-
-```shell
-$ yarn lint
-```
-
-### test
-
-Runs `jest .` with the included `jest` configuration against the project. Test files are expected
-alongside the files they're testing, with a `.test.ts` suffix.
-
-```shell
-$ yarn test
-```
-
-You can also modify this command to only include, for example, a `tests/` folder. Edit the `test` script in `package.json`:
-
-```json
-{
-  "scripts": {
-    "test": "jest tests/"
+      // Response body is also annotated based on `responseSchema`
+      body: {
+        userId: newUser.id,
+      },
+    };
   }
-}
+);
 ```
 
-### prepack
+### Endpoint type inference helpers
 
-Runs linting, tests, and build, ahead of packaging the project for distribution (through e.g npm).
+Different utility types are available for handling endpoint type information.
 
-This is a lifecycle hook that you will likely not run directly, but will instead be called automatically during package publishing.
+```ts
+import type { InferEndpointType } from 'next-better-api';
+import type { getUsers } from '../api/users.ts';
 
-```shell
-$ yarn prepack
+type GetUsersResponseBody = InferEndpointType<typeof getUsers>['Response'];
+
+// Can be combined with API calls, react-query, etc to provide end-to-end type annotation from the endpoint definition:
+
+const response = await fetch('/api/users' /* ... */);
+
+const newUser = (await response.json()) as GetUsersResponseBody;
+
+newUser.userId; // #=> string
 ```
 
-## Stuff
+Additional helpers are available:
 
-Contributions are welcome! Please open tickets or - ideally - pull requests with your suggestions.
+```ts
+import type {
+  InferEndpointType,
+  InferQueryType,
+  InferResponseBodyType,
+  InferRequestBodyType,
+} from 'next-better-api';
+```
+
+### Stuff
+
+See license information under [`LICENSE.md`](/LICENSE.md).
+
+Contributions are super welcome - in the form of bug reports, suggestions, or better yet, pull requests!

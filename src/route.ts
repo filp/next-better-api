@@ -2,10 +2,6 @@ import type { z, ZodError, ZodTypeAny } from 'zod';
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 import { type RouteContext, createRouteContext } from './context';
 
-// BaseBodyType is the base type used for response body: anything that looks like
-// a collection (e.g arbitrary JSON)
-export type BaseBodyType = Record<string, unknown>;
-
 export type HttpMethod =
   | 'get'
   | 'post'
@@ -21,6 +17,9 @@ type ErrorResponse = {
     message: string;
   };
 };
+
+// A response body that looks JSON-y, used as the default type:
+type BaseBodyType = Record<string, unknown>;
 
 type MethodHandlerMap<BodyT = BaseBodyType> = Partial<
   Record<
@@ -103,22 +102,16 @@ const decorateHandler = (
     handler
   );
 
-// Wraps the given handler with core instrumentation. This allows API handlers
-// not created through the `route` method (such as next-auth's) to benefit from
-// instrumentation and other middlewares.
-export const instrumentHandler = (handler: NextApiHandler) =>
-  decorateHandler(handler, []);
-
 export const routeHandler = (handler: NextApiHandler) =>
-  decorateHandler(handler, []);
+  decorateHandler(handler, [
+    /* no decoration support ATM */
+  ]);
 
-// Base runtime context type for endpoint handlers:
 type EndpointContext<QueryT, RequestBodyT> = RouteContext & {
   query: QueryT;
   body: RequestBodyT;
 };
 
-// The outcome of an endpoint handler:
 type EndpointResult<ResponseBodyT> = {
   status?: number;
   redirect?: string;
@@ -128,18 +121,15 @@ type EndpointResult<ResponseBodyT> = {
   };
 };
 
-// Takes a ZodType | undefined union and spits out either an inferred
-// type for the schema, or undefined. This allows us to more smoothly
-// handle type inference for optional schemas:
-type OptionalSchemaType<S> = S extends ZodTypeAny ? z.infer<S> : undefined;
-
 // Shape of an individual endpoint runtime handler:
 export type EndpointHandler<QueryT, RequestBodyT, ResponseBodyT> = (
   ctx: EndpointContext<QueryT, RequestBodyT>
 ) => Promise<EndpointResult<ResponseBodyT>>;
 
-// We use this inferred type to build our additional InferX types without
-// having to know the specifics of the `endpoint` method shape:
+// Takes a ZodType | undefined union and spits out either an inferred
+// type for the schema, or undefined. This allows us to more smoothly
+// handle type inference for optional schemas:
+type OptionalSchemaType<S> = S extends ZodTypeAny ? z.infer<S> : undefined;
 type EndpointDefinition = ReturnType<typeof endpoint>;
 
 // Allows infering the request body type given an endpoint:
@@ -161,6 +151,39 @@ export type InferQueryType<T extends EndpointDefinition> = NonNullable<
   OptionalSchemaType<T['querySchema']>
 >;
 
+export type InferEndpointType<T extends EndpointDefinition> = NonNullable<{
+  Query: InferQueryType<T>;
+  Body: InferRequestBodyType<T>;
+  Response: InferResponseBodyType<T>;
+}>;
+
+const validateEndpointSchemaForRequest = (
+  endpointDef: EndpointDefinition,
+  req: NextApiRequest
+) => {
+  const querySchema = endpointDef.querySchema;
+  const bodySchema = endpointDef.bodySchema;
+
+  const errorResponse = ({ errors }: ZodError) =>
+    JSON.stringify({
+      errors,
+    });
+
+  if (querySchema) {
+    const schemaParse = querySchema?.safeParse(req.query);
+    if (!schemaParse?.success) {
+      return errorResponse(schemaParse.error);
+    }
+  }
+
+  if (bodySchema) {
+    const schemaParse = bodySchema?.safeParse(req.body);
+    if (!schemaParse?.success) {
+      return errorResponse(schemaParse.error);
+    }
+  }
+};
+
 type EndpointOptions<QuerySchemaT, RequestBodySchemaT, ResponseBodySchemaT> = {
   method: HttpMethod;
   responseSchema?: ResponseBodySchemaT;
@@ -168,13 +191,6 @@ type EndpointOptions<QuerySchemaT, RequestBodySchemaT, ResponseBodySchemaT> = {
   querySchema?: QuerySchemaT;
 };
 
-// Intermediate function for building an endpoint handler. Produces an object that
-// can be provided to `route()` to be converted into a single NextApiHandler, e.g:
-//
-// const postContent = endpoint(...)
-// const getContent = endpoint(...)
-//
-// export default route([postContent, getContent]);
 export const endpoint = <
   QuerySchemaT extends ZodTypeAny = ZodTypeAny,
   RequestBodySchemaT extends ZodTypeAny = ZodTypeAny,
@@ -195,9 +211,10 @@ export const endpoint = <
   handler,
 });
 
-export const route = (endpoints: EndpointDefinition[]): NextApiHandler => {
-  // Map endpoints to their methods, and throw an error early on to alert
-  // developers if somehow two endpoints are matching for the same method:
+// 'converts' a list of endpoints to a single NextJS API handler.
+export const asHandler = (endpoints: EndpointDefinition[]): NextApiHandler => {
+  // Map endpoints to their methods:
+  // Throws early if there's duplicate endpoints for the same method.
   const methodEndpoints: Record<string, EndpointDefinition> = endpoints.reduce(
     (endpoints, endpointDef) => {
       const method = (endpointDef.method as string).toLowerCase();
@@ -263,31 +280,4 @@ export const route = (endpoints: EndpointDefinition[]): NextApiHandler => {
   };
 
   return routeHandler(outerHandler);
-};
-
-export const validateEndpointSchemaForRequest = (
-  endpointDef: EndpointDefinition,
-  req: NextApiRequest
-) => {
-  const querySchema = endpointDef.querySchema;
-  const bodySchema = endpointDef.bodySchema;
-
-  const errorResponse = ({ errors }: ZodError) =>
-    JSON.stringify({
-      errors,
-    });
-
-  if (querySchema) {
-    const schemaParse = querySchema?.safeParse(req.query);
-    if (!schemaParse?.success) {
-      return errorResponse(schemaParse.error);
-    }
-  }
-
-  if (bodySchema) {
-    const schemaParse = bodySchema?.safeParse(req.body);
-    if (!schemaParse?.success) {
-      return errorResponse(schemaParse.error);
-    }
-  }
 };

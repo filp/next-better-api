@@ -1,9 +1,9 @@
 {
-  "name": "nextjs-better-api",
+  "name": "next-better-api",
   "version": "0.1.0",
   "description": "Utilities for safer, easier APIs with NextJS",
   "main": "build/src/index.js",
-  "repository": "git@github.com:filp/nextjs-better-api",
+  "repository": "git@github.com:filp/next-better-api",
   "author": "Filipe Dobreira",
   "license": "MIT",
   "private": true,
@@ -15,7 +15,8 @@
     "prepack": "yarn lint && yarn test && yarn build"
   },
   "peerDependencies": {
-    "next": "^12.*"
+    "next": "^12.*",
+    "zod": "^3.*"
   },
   "devDependencies": {
     "@types/jest": "^28.1.6",
@@ -30,9 +31,7 @@
     "prettier": "^2.7.1",
     "ts-jest": "^28.0.7",
     "ts-node": "^10.9.1",
-    "typescript": "^4.7.4"
-  },
-  "dependencies": {
+    "typescript": "^4.7.4",
     "zod": "^3.18.0"
   }
 }
