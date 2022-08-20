@@ -109,10 +109,10 @@ export const routeHandler = (handler: NextApiHandler) =>
     /* no decoration support ATM */
   ]);
 
-type EndpointContext<QueryT, RequestBodyT> = RouteContext & {
+type EndpointContext<QueryT, RequestBodyT, ContexT> = RouteContext & {
   query: QueryT;
   body: RequestBodyT;
-};
+} & ContexT;
 
 type EndpointResult<ResponseBodyT> = {
   status?: number;
@@ -124,8 +124,8 @@ type EndpointResult<ResponseBodyT> = {
 };
 
 // Shape of an individual endpoint runtime handler:
-export type EndpointHandler<QueryT, RequestBodyT, ResponseBodyT> = (
-  ctx: EndpointContext<QueryT, RequestBodyT>
+export type EndpointHandler<QueryT, RequestBodyT, ResponseBodyT, ContextT> = (
+  ctx: EndpointContext<QueryT, RequestBodyT, ContextT>
 ) => MaybePromise<EndpointResult<ResponseBodyT>>;
 
 // Takes a ZodType | undefined union and spits out either an inferred
@@ -186,27 +186,36 @@ const validateEndpointSchemaForRequest = (
   }
 };
 
-type EndpointOptions<QuerySchemaT, RequestBodySchemaT, ResponseBodySchemaT> = {
+type EndpointOptions<
+  QuerySchemaT,
+  RequestBodySchemaT,
+  ResponseBodySchemaT,
+  ContextT
+> = {
   method: HttpMethod;
   responseSchema?: ResponseBodySchemaT;
   bodySchema?: RequestBodySchemaT;
   querySchema?: QuerySchemaT;
+  context?: (routeContext: RouteContext) => MaybePromise<ContextT>;
 };
 
 export const endpoint = <
   QuerySchemaT extends ZodTypeAny = ZodTypeAny,
   RequestBodySchemaT extends ZodTypeAny = ZodTypeAny,
-  ResponseBodySchemaT extends ZodTypeAny = ZodTypeAny
+  ResponseBodySchemaT extends ZodTypeAny = ZodTypeAny,
+  ContextT extends Record<string, unknown> | undefined = undefined
 >(
   options: EndpointOptions<
     QuerySchemaT,
     RequestBodySchemaT,
-    ResponseBodySchemaT
+    ResponseBodySchemaT,
+    ContextT
   >,
   handler: EndpointHandler<
     OptionalSchemaType<QuerySchemaT>,
     OptionalSchemaType<RequestBodySchemaT>,
-    OptionalSchemaType<ResponseBodySchemaT>
+    OptionalSchemaType<ResponseBodySchemaT>,
+    ContextT
   >
 ) => ({
   ...options,
@@ -235,7 +244,7 @@ export const asHandler = (endpoints: EndpointDefinition[]): NextApiHandler => {
 
   const outerHandler: NextApiHandler = async (req, res) => {
     try {
-      const context = createRouteContext({ req, res });
+      const routeContext = createRouteContext({ req, res });
       const method = req.method?.toLowerCase() as HttpMethod;
       const endpointDef = methodEndpoints[method];
 
@@ -257,13 +266,19 @@ export const asHandler = (endpoints: EndpointDefinition[]): NextApiHandler => {
         return;
       }
 
+      const endpointContext = endpointDef.context
+        ? await endpointDef.context(routeContext)
+        : {};
+
       type LocalEndpointContext = EndpointContext<
         OptionalSchemaType<typeof endpointDef.querySchema>,
-        OptionalSchemaType<typeof endpointDef.bodySchema>
+        OptionalSchemaType<typeof endpointDef.bodySchema>,
+        RouteContext
       >;
 
       const { status, redirect, body, headers } = await handler({
-        ...context,
+        ...routeContext,
+        ...endpointContext,
         query: req.query,
         body: req.body,
       } as LocalEndpointContext);

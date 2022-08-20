@@ -1,8 +1,6 @@
 # next-better-api ⚡️🔵 [![npm version](https://badge.fury.io/js/next-better-api.svg)](https://badge.fury.io/js/next-better-api)
 
-Opinionated helpers for building NextJS APIs, powered by [Zod](https://github.com/colinhacks/zod).
-
-
+Opinionated helpers for building better [NextJS](https://nextjs.org/) APIs, powered by [Zod](https://github.com/colinhacks/zod).
 
 <p align="center">
 <img src="./logo.svg">
@@ -147,6 +145,28 @@ import type {
   InferResponseBodyType,
   InferRequestBodyType,
 } from 'next-better-api';
+```
+
+### Composable endpoint context builder:
+
+Use the `context` option to provide a context builder with access to `{ req, res }`,
+to generate your own request context object.
+
+```ts
+const getUser = endpoint(
+  {
+    method: 'get',
+    context: async ({ req }) => ({
+      user: await getUserFromRequest(req),
+    }),
+  },
+  ({ user }) => ({
+    user: {
+      id: user.id,
+      email: user.email,
+    },
+  })
+);
 ```
 
 ---

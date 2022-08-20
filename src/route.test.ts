@@ -40,4 +40,23 @@ describe('routing', () => {
     expect(e.method).toEqual('post');
     expect(e.handler);
   });
+
+  test('creating an endpoint with a context builder', () => {
+    const e = endpoint(
+      {
+        method: 'get',
+        context: ({ req }) => ({
+          userId: req.query.userId,
+        }),
+      },
+      ({ userId }) => ({
+        status: 200,
+        body: {
+          userId,
+        },
+      })
+    );
+
+    expect(e.context).toBeDefined();
+  });
 });
