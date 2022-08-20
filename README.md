@@ -1,42 +1,49 @@
 # next-better-api ⚡️🔵 [![npm version](https://badge.fury.io/js/next-better-api.svg)](https://badge.fury.io/js/next-better-api)
 
-Opinionated helpers for building better [NextJS](https://nextjs.org/) APIs, powered by [Zod](https://github.com/colinhacks/zod).
+Opinionated TypeScript-first helpers for building better [NextJS](https://nextjs.org/) APIs, powered by [Zod](https://github.com/colinhacks/zod).
 
 <p align="center">
-<img src="./logo.svg">
+  <img src="./logo.svg">
 </p>
+
+## At a glance:
+
+- 🙅‍♀️ Hands-off Typescript type inference based on your Zod validation schemas for `req.query`, `req.body` and your API response
+- ✨ Type inference helpers to use with `react-query`, `fetch`, and other client-side utilities
+- 🔌 Minimal and composable &mdash; bring your own request context, add middleware, etc
 
 ```ts
 import { z } from 'zod';
 import { endpoint, asHandler } from 'next-better-api';
 
-const getUsers = endpoint(
+const getUser = endpoint(
   {
     method: 'get',
+    querySchema: z.object({
+      id: z.string(),
+    }),
     responseSchema: z.object({
-      users: z.array(
-        z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-          active: z.boolean(),
-        })
-      ),
+      user: z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+        active: z.boolean(),
+      }),
     }),
   },
-  async () => {
-    const users = await getAllUsers();
+  async ({ req }) => {
+    const user = await getUser(req.query.id);
 
     return {
       status: 200,
       body: {
-        users,
+        user,
       },
     };
   }
 );
 
-export asHandler([getUsers]);
+export default asHandler([getUser]);
 ```
 
 ## Installation:

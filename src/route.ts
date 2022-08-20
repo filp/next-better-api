@@ -163,8 +163,7 @@ const validateEndpointSchemaForRequest = (
   endpointDef: EndpointDefinition,
   req: NextApiRequest
 ) => {
-  const querySchema = endpointDef.querySchema;
-  const bodySchema = endpointDef.bodySchema;
+  const { querySchema, bodySchema } = endpointDef;
 
   const errorResponse = ({ errors }: ZodError) =>
     JSON.stringify({
@@ -172,16 +171,16 @@ const validateEndpointSchemaForRequest = (
     });
 
   if (querySchema) {
-    const schemaParse = querySchema?.safeParse(req.query);
-    if (!schemaParse?.success) {
-      return errorResponse(schemaParse.error);
+    const querySchemaParse = querySchema?.safeParse(req.query);
+    if (!querySchemaParse?.success) {
+      return errorResponse(querySchemaParse.error);
     }
   }
 
   if (bodySchema) {
-    const schemaParse = bodySchema?.safeParse(req.body);
-    if (!schemaParse?.success) {
-      return errorResponse(schemaParse.error);
+    const bodySchemaParse = bodySchema?.safeParse(req.body);
+    if (!bodySchemaParse?.success) {
+      return errorResponse(bodySchemaParse.error);
     }
   }
 };
@@ -282,6 +281,17 @@ export const asHandler = (endpoints: EndpointDefinition[]): NextApiHandler => {
         query: req.query,
         body: req.body,
       } as LocalEndpointContext);
+
+      if (body && endpointDef.responseSchema) {
+        const responseSchemaParse = endpointDef.responseSchema.safeParse(body);
+
+        // TODO: Handle response schema errors differently:
+        // - Allow configuring throw rule through options
+        // - Default to throwing in development only, warning otherwise
+        if (!responseSchemaParse.success) {
+          throw responseSchemaParse.error;
+        }
+      }
 
       setResponseHeaders(res, headers);
 
