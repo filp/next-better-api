@@ -2,9 +2,11 @@
 
 Opinionated helpers for building NextJS APIs, powered by [Zod](https://github.com/colinhacks/zod).
 
-<center>
+
+
+<p align="center">
 <img src="./logo.svg">
-</center>
+</p>
 
 ```ts
 import { z } from 'zod';
