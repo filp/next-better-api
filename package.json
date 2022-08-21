@@ -5,13 +5,21 @@
   "keywords": [
     "next",
     "nextjs",
+    "next.js",
     "api",
     "zod",
     "schema",
     "helper"
   ],
   "main": "build/src/index.js",
-  "repository": "git@github.com:filp/next-better-api",
+  "homepage": "https://github.com/filp/next-better-api",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/filp/next-better-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/filp/next-better-api/issues"
+  },
   "author": "Filipe Dobreira",
   "license": "MIT",
   "types": "build/src/index.d.ts",
