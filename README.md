@@ -8,7 +8,7 @@ Opinionated TypeScript-first helpers for building better [NextJS](https://nextjs
 
 ## At a glance:
 
-- 🙅‍♀️ Hands-off Typescript type inference based on your Zod validation schemas for `req.query`, `req.body` and your API response
+- 🙅‍♀️ Hands-off Typescript type inference based on your Zod validation schemas for `query`, `req.body` and your API response
 - ✨ Type inference helpers to use with `react-query`, `fetch`, and other client-side utilities
 - 🔌 Minimal and composable &mdash; bring your own request context, add middleware, etc
 - ☁ No additional dependencies (besides `zod` and `next` as `peerDependencies`, of course)
@@ -32,8 +32,8 @@ const getUser = endpoint(
       }),
     }),
   },
-  async ({ req }) => {
-    const user = await getUser(req.query.id);
+  async ({ query }) => {
+    const user = await getUser(query.id);
 
     return {
       status: 200,
