@@ -96,6 +96,8 @@ export default asHandler([getUsers]);
 
 See [DOCS.md](./DOCS.md)
 
+For an example setup, [check out my starter template/example](https://github.com/filp/nextjs-app-starter).
+
 ---
 
 ## Stuff
