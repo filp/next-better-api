@@ -8,9 +8,9 @@ Opinionated TypeScript-first helpers for building better [NextJS](https://nextjs
 
 ## At a glance:
 
-- 🙅‍♀️ Hands-off Typescript type inference based on your Zod validation schemas for `query`, `req.body` and your API response
+- 🙅‍♀️ Hands-off Typescript type inference based on your Zod validation schemas for query params, request body, and your API response
 - ✨ Type inference helpers to use with `react-query`, `fetch`, and other client-side utilities
-- 🔌 Minimal and composable &mdash; bring your own request context, add middleware, etc
+- 🔌 Minimal and composable &mdash; bring your own request context, use existing middleware, etc
 - ☁ No additional dependencies (besides `zod` and `next` as `peerDependencies`, of course)
 
 ```ts
@@ -49,6 +49,8 @@ export default asHandler([getUser]);
 
 ## Installation:
 
+> Skip to [API reference](./DOCS.md)
+
 `next-better-api` requires `zod` for schema validation. You can install both libraries with yarn or npm on your existing NextJS project:
 
 ```shell
@@ -63,127 +65,36 @@ And import it from your API definitions:
 
 ```ts
 import { endpoint, asHandler } from 'next-better-api';
-// import { z } from 'zod'; // If you are defining schemas for your endpoints
+import { z } from 'zod'; // If you are defining schemas for your endpoints
 ```
 
-Remember you always need to use `asHandler` to convert your `next-better-api` endpoints to NextJS-compatible handlers:
+Now simply define individual endpoints for each HTTP method in your existing API files,
+and export your endpoints as a single `NextApiHandler`:
 
 ```ts
-export default asHandler([getUsers, createUser, updateUser]);
-```
-
-## Features:
-
-### Method handler support
-
-```ts
-const getUsers = endpoint({
-  method: 'get',
-  // ...
-});
-
-const deleteUser = endpoint({
-  method: 'delete',
-  // ...
-});
-```
-
-### Schema validation & automatic type inference support
-
-See [Zod](https://github.com/colinhacks/zod) for all available schema validation options.
-
-```ts
-const createUser = endpoint(
-  {
-    method: 'post',
-    bodySchema: z.object({
-      // Name must be at least 3 characters long
-      name: z.string().min(3),
-    }),
-
-    responseSchema: z.object({
-      userId: z.string(),
-    }),
-  },
-
-  async ({ req }) => {
-    // Type for `name` is automatically inferred based on `bodySchema`
-    const { name } = req.body;
-
-    const newUser = await createUser(req.body);
-
-    return {
-      status: 201,
-
-      // Response body is also annotated based on `responseSchema`
-      body: {
-        userId: newUser.id,
-      },
-    };
-  }
-);
-```
-
-### Endpoint type inference helpers
-
-Different utility types are available for handling endpoint type information.
-
-```ts
-import type { InferEndpointType } from 'next-better-api';
-import type { getUsers } from '../api/users.ts';
-
-type GetUsersResponseBody = InferEndpointType<typeof getUsers>['Response'];
-
-// Can be combined with API calls, react-query, etc to provide end-to-end
-// type annotation from the endpoint definition:
-
-const response = await fetch('/api/users' /* ... */);
-
-const newUser = (await response.json()) as GetUsersResponseBody;
-
-newUser.userId; // #=> string
-```
-
-Additional helpers are available:
-
-```ts
-import type {
-  InferEndpointType,
-  InferQueryType,
-  InferResponseBodyType,
-  InferRequestBodyType,
-} from 'next-better-api';
-```
-
-### Composable endpoint context builder:
-
-Use the `context` option to provide a context builder with access to `{ req, res }`,
-to generate your own request context object.
-
-```ts
-const getUser = endpoint(
+// pages/api/users.ts
+const getUsers = endpoint(
   {
     method: 'get',
-    context: async ({ req }) => ({
-      user: await getUserFromRequest(req),
-    }),
   },
-  ({ user }) => {
-    // `user` is now available as part of the handler context:
-    const { id, email } = user;
+  async () => {
+    const users = await getUsersFromDb();
 
     return {
       status: 200,
       body: {
-        user: {
-          id: id,
-          email: email,
-        },
+        users,
       },
     };
   }
 );
+
+export default asHandler([getUsers]);
 ```
+
+## API Reference
+
+See [DOCS.md](./DOCS.md)
 
 ---
 

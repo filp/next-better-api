@@ -1,4 +1,11 @@
-import { endpoint } from './route';
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import { createRequest, createResponse } from 'node-mocks-http';
+import { asHandler, endpoint } from './index';
+
+export const createTestRouteContext = () => ({
+  req: createRequest<NextApiRequest>(),
+  res: createResponse<NextApiResponse>(),
+});
 
 describe('routing', () => {
   test('creating an endpoint', () => {
@@ -58,5 +65,37 @@ describe('routing', () => {
     );
 
     expect(e.context).toBeDefined();
+  });
+
+  test('creating an endpoint with a decorator', async () => {
+    const mock = jest.fn();
+
+    const dec =
+      (innerHandler: NextApiHandler) =>
+      async (req: NextApiRequest, res: NextApiResponse) => {
+        mock(req, res);
+
+        return innerHandler(req, res);
+      };
+
+    const e = endpoint(
+      {
+        method: 'get',
+      },
+      () => ({
+        status: 200,
+        body: {
+          message: 'hello',
+        },
+      })
+    );
+
+    const decorated = asHandler([e], {
+      decorators: [dec],
+    });
+
+    const { req, res } = createTestRouteContext();
+    await decorated(req, res);
+    expect(mock).toHaveBeenCalledWith(req, res);
   });
 });
