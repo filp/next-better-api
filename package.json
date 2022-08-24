@@ -1,6 +1,6 @@
 {
   "name": "next-better-api",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Utilities for safer, easier APIs with NextJS",
   "keywords": [
     "next",
